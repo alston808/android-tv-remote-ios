@@ -11,14 +11,17 @@ jobs:
         
       - name: Generate Xcode Project
         run: xcodegen generate
-        
+
       - name: Build and Package IPA
         run: |
           # Make the repository's provided scripts executable
           chmod +x Scripts/generate-identity.sh
           chmod +x Scripts/package-ipa.sh
           
-          # Run the packaging script provided by the developer
+          # Inject code-signing bypass flags directly into the xcodebuild command
+          sed -i '' 's/xcodebuild/xcodebuild CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO/g' Scripts/package-ipa.sh
+          
+          # Run the patched packaging script
           ./Scripts/package-ipa.sh
           
       - name: Upload Artifact
