@@ -14,20 +14,28 @@ jobs:
 
       - name: Build and Package IPA
         run: |
-          # Make the repository's provided scripts executable
-          chmod +x Scripts/generate-identity.sh
-          chmod +x Scripts/package-ipa.sh
+          # Build the raw .app file in a predictable local directory
+          xcodebuild clean build \
+            -project RemoteControl.xcodeproj \
+            -scheme RemoteControl \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            -derivedDataPath ./build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
           
-          # Inject code-signing bypass flags directly into the xcodebuild command
-          sed -i '' 's/xcodebuild/xcodebuild CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO/g' Scripts/package-ipa.sh
+          # An IPA is just a ZIP archive containing a 'Payload' directory
+          mkdir -p Payload
           
-          # Run the patched packaging script
-          ./Scripts/package-ipa.sh
+          # Move the compiled app into the Payload folder
+          mv build/Build/Products/Release-iphoneos/*.app Payload/
+          
+          # Zip the folder into the final artifact
+          zip -r RemoteControl.ipa Payload
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-app
-          # The exact output name might depend on what package-ipa.sh produces,
-          # but typically it will be placed in the build/ directory or root.
-          path: "*.ipa"
+          path: RemoteControl.ipa
