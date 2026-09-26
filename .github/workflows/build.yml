@@ -1,0 +1,30 @@
+name: Build Unsigned IPA
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install XcodeGen
+        run: brew install xcodegen
+        
+      - name: Generate Xcode Project
+        run: xcodegen generate
+        
+      - name: Build and Package IPA
+        run: |
+          # Make the repository's provided scripts executable
+          chmod +x Scripts/generate-identity.sh
+          chmod +x Scripts/package-ipa.sh
+          
+          # Run the packaging script provided by the developer
+          ./Scripts/package-ipa.sh
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-app
+          # The exact output name might depend on what package-ipa.sh produces,
+          # but typically it will be placed in the build/ directory or root.
+          path: "*.ipa"
